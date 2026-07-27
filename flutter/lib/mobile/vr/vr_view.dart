@@ -56,6 +56,11 @@ class VrView {
   /// frame must not be pinned to the middle of the desktop.
   Offset _limit = Offset.zero;
 
+  /// One eye's viewport, as last laid out. Zero until the first layout. Lives
+  /// here because this is what already needs it, and a second copy elsewhere is
+  /// how the two halves of the view state came to disagree before.
+  Size eye = Size.zero;
+
   /// Where the head-driven pointer is aiming, in degrees.
   ///
   /// In head mode this is the view direction plus the head's position inside the
@@ -87,6 +92,7 @@ class VrView {
   /// on every layout; it only recomputes a bound.
   void setBounds({required Size image, required Size eye}) {
     if (image.isEmpty || eye.isEmpty) return;
+    this.eye = eye;
     _limit = viewLimitDeg(image: image, eye: eye, s: settings);
   }
 
