@@ -8,13 +8,22 @@ of which still apply. This file covers only what is specific to this fork.
 
 ## What this repo is
 
-A fork of [RustDesk](https://github.com/rustdesk/rustdesk) at tag **1.4.9**, on
-branch `feat/vr`, adding a Cardboard-VR viewing mode and Bluetooth-mouse support
-to the **Android** client, so a remote desktop can be viewed through a
-phone-in-a-headset viewer and driven with a physical mouse.
+A fork of [RustDesk](https://github.com/rustdesk/rustdesk) at tag **1.4.9**, adding
+a Cardboard-VR viewing mode and Bluetooth-mouse support to the **Android** client,
+so a remote desktop can be viewed through a phone-in-a-headset viewer and driven
+with a physical mouse.
+
+This is a **divergent fork, not a contribution queue.** There is no intention of
+upstreaming, so it is a standalone repository rather than a GitHub fork, work lands
+on `main`, and upstream is a plain git remote (`git fetch upstream`) used for
+rebasing onto a newer tag. Nothing here should be shaped around what upstream would
+accept.
 
 Everything this fork adds is **Dart and Kotlin**. Nothing under `src/` (the Rust
-core), `flutter/lib/desktop/` or `flutter/lib/web/` is touched.
+core), `flutter/lib/desktop/` or `flutter/lib/web/` is touched — and the reason is
+not merge cleanliness but that **the Rust core cannot be rebuilt here at all.**
+`librustdesk.so` is a prebuilt binary lifted from the official release APK, so a
+change under `src/` would compile into nothing and silently not take effect.
 
 The Dart layer is a third pass. The first accreted over 35 commits of discovery.
 The second was written once with the requirements settled — and still got the view

@@ -1,182 +1,147 @@
-<p align="center">
-  <img src="res/logo-header.svg" alt="RustDesk - Your remote desktop"><br>
-  <a href="#raw-steps-to-build">Build</a> •
-  <a href="#how-to-build-with-docker">Docker</a> •
-  <a href="#file-structure">Structure</a> •
-  <a href="#snapshot">Snapshot</a><br>
-  [<a href="docs/README-UA.md">Українська</a>] | [<a href="docs/README-CS.md">česky</a>] | [<a href="docs/README-ZH.md">中文</a>] | [<a href="docs/README-HU.md">Magyar</a>] | [<a href="docs/README-ES.md">Español</a>] | [<a href="docs/README-FA.md">فارسی</a>] | [<a href="docs/README-FR.md">Français</a>] | [<a href="docs/README-DE.md">Deutsch</a>] | [<a href="docs/README-PL.md">Polski</a>] | [<a href="docs/README-ID.md">Indonesian</a>] | [<a href="docs/README-FI.md">Suomi</a>] | [<a href="docs/README-ML.md">മലയാളം</a>] | [<a href="docs/README-JP.md">日本語</a>] | [<a href="docs/README-NL.md">Nederlands</a>] | [<a href="docs/README-IT.md">Italiano</a>] | [<a href="docs/README-RU.md">Русский</a>] | [<a href="docs/README-PTBR.md">Português (Brasil)</a>] | [<a href="docs/README-EO.md">Esperanto</a>] | [<a href="docs/README-KR.md">한국어</a>] | [<a href="docs/README-AR.md">العربي</a>] | [<a href="docs/README-VN.md">Tiếng Việt</a>] | [<a href="docs/README-DA.md">Dansk</a>] | [<a href="docs/README-GR.md">Ελληνικά</a>] | [<a href="docs/README-TR.md">Türkçe</a>] | [<a href="docs/README-NO.md">Norsk</a>] | [<a href="docs/README-RO.md">Română</a>]<br>
-  <b>We need your help to translate this README, <a href="https://github.com/rustdesk/rustdesk/tree/master/src/lang">RustDesk UI</a> and <a href="https://github.com/rustdesk/doc.rustdesk.com">RustDesk Doc</a> to your native language</b>
-</p>
+# RustDesk VR
 
-> [!Caution]
-> **Misuse Disclaimer:** <br>
-> The developers of RustDesk do not condone or support any unethical or illegal use of this software. Misuse, such as unauthorized access, control or invasion of privacy, is strictly against our guidelines. The authors are not responsible for any misuse of the application.
+View a remote desktop through a Google Cardboard viewer, on Android, and drive it
+with a Bluetooth mouse or with your head.
 
+A fork of [RustDesk](https://github.com/rustdesk/rustdesk) at tag **1.4.9** that
+adds a stereoscopic VR mode to the Android client. Everything else about RustDesk
+is untouched — same connection model, same UI, same self-hosting. The VR layer is
+Dart and Kotlin only; the Rust core is not modified.
 
-Chat with us: [Discord](https://discord.gg/nDceKgxnkV) | [Twitter](https://twitter.com/rustdesk) | [Reddit](https://www.reddit.com/r/rustdesk) | [YouTube](https://www.youtube.com/@rustdesk)
+Not affiliated with or endorsed by the RustDesk project. It installs **alongside**
+official RustDesk under its own application id, so it has its own RustDesk ID,
+settings and peer list.
 
-[![RustDesk Server Pro](https://img.shields.io/badge/RustDesk%20Server%20Pro-Advanced%20Features-blue)](https://rustdesk.com/pricing.html)
+## What it does
 
-Yet another remote desktop solution, written in Rust. Works out of the box with no configuration required. You have full control of your data, with no concerns about security. You can use our rendezvous/relay server, [set up your own](https://rustdesk.com/server), or [write your own rendezvous/relay server](https://github.com/rustdesk/rustdesk-server-demo).
+A toolbar button in a remote session switches to side-by-side stereo. From there
+the phone goes in the viewer, and everything is driven by head movement, a mouse,
+or a tap on the panel.
 
-![image](https://user-images.githubusercontent.com/71636191/171661982-430285f0-2e12-4b1d-9957-4a58e375304d.png)
+**Three modes**, cycled in the headset with middle + left click. Each is named for
+what moves the cursor and what the view does:
 
-RustDesk welcomes contribution from everyone. See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for help getting started.
+| Mode | Cursor | View |
+| --- | --- | --- |
+| `mouse · panning view` | Bluetooth mouse | tracks your head across a virtual screen wider than the lenses |
+| `head · dragging view` | your head, aimed with the centre reticle | your head **drags** it, and it stays where you leave it |
+| `mouse · locked view` | Bluetooth mouse | fixed in front of your face — immune to gyro drift |
 
-[**FAQ**](https://github.com/rustdesk/rustdesk/wiki/FAQ)
+`head · dragging view` is the one a bare Cardboard viewer can use with no mouse at
+all: the conductive lever tapping the panel is a left click, and holding it drags.
+The view follows your head through a few degrees of slack and then holds position,
+so relaxing your neck doesn't throw the desktop back where it came from.
 
-[**BINARY DOWNLOAD**](https://github.com/rustdesk/rustdesk/releases)
+**Also included**
 
-[**NIGHTLY BUILD**](https://github.com/rustdesk/rustdesk/releases/tag/nightly)
+- **Barrel lens correction** as a single shader pass, with an in-headset
+  calibration grid. Off by default — the coefficients belong to one specific piece
+  of plastic, and a wrong correction looks worse than none.
+- **In-headset calibration.** Tuning a viewer by dragging sliders means taking the
+  headset off, which is the one thing that makes the result unjudgeable. Instead:
+  turn your head to set a value, tap or click for the next. Works with nothing
+  connected, since what it tunes belongs to the viewer rather than to any remote
+  machine.
+- **Reach the corners.** The view can travel until a corner of the desktop sits
+  dead ahead, instead of being confined so the corners stay permanently off to the
+  side at every head angle.
+- **Full brightness in VR.** A viewer covers the ambient light sensor, so
+  auto-brightness reads darkness and dims the panel exactly when the lenses are
+  already absorbing much of the light. Applied as a window override: no permission
+  needed, your system setting untouched.
 
-[<img src="https://f-droid.org/badge/get-it-on.png"
-    alt="Get it on F-Droid"
-    height="80">](https://f-droid.org/en/packages/com.carriez.flutter_hbb)
-[<img src="https://flathub.org/api/badge?svg&locale=en"
-    alt="Get it on Flathub"
-    height="80">](https://flathub.org/apps/com.rustdesk.RustDesk)
+## In-headset controls
 
-## Dependencies
+The screen is unreachable once the phone is in the viewer, so the middle mouse
+button doubles as a modifier.
 
-Desktop versions use Flutter or Sciter (deprecated) for GUI, this tutorial is for Sciter only, since it is easier and more friendly to start. Check out our [CI](https://github.com/rustdesk/rustdesk/blob/master/.github/workflows/flutter-build.yml) for building Flutter version.
+| Input | Action |
+| --- | --- |
+| middle + left | next mode |
+| middle + right | leave VR |
+| hold middle | recentre — view straight ahead, forget any drag |
+| tap middle | ordinary middle click, forwarded |
+| screen tap | left click at the cursor, hold to drag |
+| back gesture | leave VR (escape hatch if the mouse fails) |
 
-Please download Sciter dynamic library yourself.
+Calibration is reachable two ways, both working with nothing connected: **Settings
+→ Cardboard VR**, or the tune button beside the VR button in a session.
 
-[Windows](https://raw.githubusercontent.com/c-smile/sciter-sdk/master/bin.win/x64/sciter.dll) |
-[Linux](https://raw.githubusercontent.com/c-smile/sciter-sdk/master/bin.lnx/x64/libsciter-gtk.so) |
-[macOS](https://raw.githubusercontent.com/c-smile/sciter-sdk/master/bin.osx/libsciter.dylib)
+## Building
 
-## Raw Steps to build
+**The Rust core is not compiled here.** `librustdesk.so` is lifted out of the
+matching official release APK, which removes the Android NDK, vcpkg and cargo-ndk
+from the build entirely. arm64 only.
 
-- Prepare your Rust development env and C++ build env
+Needs **Flutter 3.24.5** exactly (what upstream CI pins — newer Dart rejects this
+pubspec) and **JDK 17** (the Gradle wrapper is 7.6.4, predating Java 21 support).
 
-- Install [vcpkg](https://github.com/microsoft/vcpkg), and set `VCPKG_ROOT` env variable correctly
-
-  - Windows: vcpkg install libvpx:x64-windows-static libyuv:x64-windows-static opus:x64-windows-static aom:x64-windows-static
-  - Linux/macOS: vcpkg install libvpx libyuv opus aom
-
-- run `cargo run`
-
-## [Build](https://rustdesk.com/docs/en/dev/build/)
-
-## How to Build on Linux
-
-### Ubuntu 18 (Debian 10)
-
-```sh
-sudo apt install -y zip g++ gcc git curl wget nasm yasm libgtk-3-dev clang libxcb-randr0-dev libxdo-dev \
-        libxfixes-dev libxcb-shape0-dev libxcb-xfixes0-dev libasound2-dev libpulse-dev cmake make \
-        libclang-dev ninja-build libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libpam0g-dev
+```bash
+source scripts/dev_env.sh
 ```
 
-### openSUSE Tumbleweed
+First-time setup, in this order — `pub get` must precede the bridge codegen or its
+ffigen step dies on a missing `.dart_tool/package_config.json`:
 
-```sh
-sudo zypper install gcc-c++ git curl wget nasm yasm gcc gtk3-devel clang libxcb-devel libXfixes-devel cmake alsa-lib-devel gstreamer-devel gstreamer-plugins-base-devel xdotool-devel pam-devel
+```bash
+git submodule update --init --recursive --depth 1
 ```
 
-### Fedora 28 (CentOS 8)
-
-```sh
-sudo yum -y install gcc-c++ git curl wget nasm yasm gcc gtk3-devel clang libxcb-devel libxdo-devel libXfixes-devel pulseaudio-libs-devel cmake alsa-lib-devel gstreamer1-devel gstreamer1-plugins-base-devel pam-devel
+```bash
+cargo fetch
 ```
 
-### Arch (Manjaro)
-
-```sh
-sudo pacman -Syu --needed unzip git cmake gcc curl wget yasm nasm zip make pkg-config clang gtk3 xdotool libxcb libxfixes alsa-lib pipewire
+```bash
+cd flutter && flutter pub get && cd ..
 ```
 
-### Install vcpkg
-
-```sh
-git clone https://github.com/microsoft/vcpkg
-cd vcpkg
-git checkout 2023.04.15
-cd ..
-vcpkg/bootstrap-vcpkg.sh
-export VCPKG_ROOT=$HOME/vcpkg
-vcpkg/vcpkg install libvpx libyuv opus aom
+```bash
+flutter_rust_bridge_codegen --rust-input ./src/flutter_ffi.rs --dart-output ./flutter/lib/generated_bridge.dart
 ```
 
-### Fix libvpx (For Fedora)
-
-```sh
-cd vcpkg/buildtrees/libvpx/src
-cd *
-./configure
-sed -i 's/CFLAGS+=-I/CFLAGS+=-fPIC -I/g' Makefile
-sed -i 's/CXXFLAGS+=-I/CXXFLAGS+=-fPIC -I/g' Makefile
-make
-cp libvpx.a $HOME/vcpkg/installed/x64-linux/lib/
-cd
+```bash
+./scripts/fetch_prebuilt_native_libs.sh
 ```
 
-### Build
+Then, from `flutter/`:
 
-```sh
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-source $HOME/.cargo/env
-git clone --recurse-submodules https://github.com/rustdesk/rustdesk
-cd rustdesk
-mkdir -p target/debug
-wget https://raw.githubusercontent.com/c-smile/sciter-sdk/master/bin.lnx/x64/libsciter-gtk.so
-mv libsciter-gtk.so target/debug
-VCPKG_ROOT=$HOME/vcpkg cargo run
+```bash
+flutter build apk --debug --target-platform android-arm64
 ```
 
-## How to build with Docker
+`cargo fetch` and the submodule are prerequisites even though no Rust is built:
+Gradle shells out to `cargo metadata` at configuration time to locate
+`rustls-platform-verifier`'s Android Maven directory.
 
-Begin by cloning the repository and building the Docker container:
+[CLAUDE.md](CLAUDE.md) has the rest — every pin, every trap, and the reasoning
+behind the VR layer's design. Worth reading before changing anything under
+`flutter/lib/mobile/vr/`.
 
-```sh
-git clone https://github.com/rustdesk/rustdesk
-cd rustdesk
-git submodule update --init --recursive
-docker build -t "rustdesk-builder" .
-```
+## Status
 
-Then, each time you need to build the application, run the following command:
+Working and in use, with the honest caveat that one person has tested it on two
+phones.
 
-```sh
-docker run --rm -it -v $PWD:/home/user/rustdesk -v rustdesk-git-cache:/home/user/.cargo/git -v rustdesk-registry-cache:/home/user/.cargo/registry -e PUID="$(id -u)" -e PGID="$(id -g)" rustdesk-builder
-```
+**Verified on hardware** — Pixel 7 (Android 17) and a Pixel "sailfish" (Android
+10, which exercises the GLES renderer rather than Impeller):
 
-Note that the first build may take longer before dependencies are cached, subsequent builds will be faster. Additionally, if you need to specify different arguments to the build command, you may do so at the end of the command in the `<OPTIONAL-ARGS>` position. For instance, if you wanted to build an optimized release version, you would run the command above followed by `--release`. The resulting executable will be available in the target folder on your system, and can be run with:
+- installs and runs alongside official RustDesk
+- pointer capture engages, and captured mouse movement and clicks reach the host
+- head dragging moves the desktop, and the position persists when you look back
+- mouse edge-push pans the view, and that pan persists too
 
-```sh
-target/debug/rustdesk
-```
+**Not yet verified**, because it needs a viewer rather than a phone on a desk:
 
-Or, if you're running a release executable:
+- the **sign** of yaw/pitch panning and of scroll
+- whether the shipped defaults fuse into a comfortable image, and whether
+  `k1 ≈ 0.22` straightens a real viewer's lenses
+- whether a Cardboard lever registers reliably for tap-to-click, and whether the
+  viewer's foam causes phantom clicks (remedy: the "Screen tap clicks" switch)
+- whether the phone's rotation sensor drifts enough to be a nuisance over a long
+  session (remedy: recentre)
 
-```sh
-target/release/rustdesk
-```
+## Licence
 
-Please ensure that you run these commands from the root of the RustDesk repository, or the application may not find the required resources. Also note that other cargo subcommands such as `install` or `run` are not currently supported via this method as they would install or run the program inside the container instead of the host.
-
-## File Structure
-
-- **[libs/hbb_common](https://github.com/rustdesk/rustdesk/tree/master/libs/hbb_common)**: video codec, config, tcp/udp wrapper, protobuf, fs functions for file transfer, and some other utility functions
-- **[libs/scrap](https://github.com/rustdesk/rustdesk/tree/master/libs/scrap)**: screen capture
-- **[libs/enigo](https://github.com/rustdesk/rustdesk/tree/master/libs/enigo)**: platform specific keyboard/mouse control
-- **[libs/clipboard](https://github.com/rustdesk/rustdesk/tree/master/libs/clipboard)**: file copy and paste implementation for Windows, Linux, macOS.
-- **[src/ui](https://github.com/rustdesk/rustdesk/tree/master/src/ui)**: obsolete Sciter UI (deprecated)
-- **[src/server](https://github.com/rustdesk/rustdesk/tree/master/src/server)**: audio/clipboard/input/video services, and network connections
-- **[src/client.rs](https://github.com/rustdesk/rustdesk/tree/master/src/client.rs)**: start a peer connection
-- **[src/rendezvous_mediator.rs](https://github.com/rustdesk/rustdesk/tree/master/src/rendezvous_mediator.rs)**: Communicate with [rustdesk-server](https://github.com/rustdesk/rustdesk-server), wait for remote direct (TCP hole punching) or relayed connection
-- **[src/platform](https://github.com/rustdesk/rustdesk/tree/master/src/platform)**: platform specific code
-- **[flutter](https://github.com/rustdesk/rustdesk/tree/master/flutter)**: Flutter code for desktop and mobile
-- **[flutter/web/js](https://github.com/rustdesk/rustdesk/tree/master/flutter/web/v1/js)**: JavaScript for Flutter web client
-
-## Screenshots
-
-![Connection Manager](https://github.com/rustdesk/rustdesk/assets/28412477/db82d4e7-c4bc-4823-8e6f-6af7eadf7651)
-
-![Connected to a Windows PC](https://github.com/rustdesk/rustdesk/assets/28412477/9baa91e9-3362-4d06-aa1a-7518edcbd7ea)
-
-![File Transfer](https://github.com/rustdesk/rustdesk/assets/28412477/39511ad3-aa9a-4f8c-8947-1cce286a46ad)
-
-![TCP Tunneling](https://github.com/rustdesk/rustdesk/assets/28412477/78e8708f-e87e-4570-8373-1360033ea6c5)
-
+[AGPL-3.0](LICENCE), inherited from RustDesk. All credit for RustDesk itself goes
+to [the RustDesk project and its contributors](https://github.com/rustdesk/rustdesk);
+this fork only adds the Android VR layer.
