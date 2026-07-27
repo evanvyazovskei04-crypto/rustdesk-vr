@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hbb/common/shared_state.dart';
@@ -23,6 +24,9 @@ import '../../models/model.dart';
 import '../../models/platform_model.dart';
 import '../../utils/image.dart';
 import '../widgets/dialog.dart';
+import '../vr/vr_session.dart';
+import '../vr/vr_settings_page.dart';
+import '../vr/vr_stereo_view.dart';
 import '../widgets/custom_scale_widget.dart';
 
 final initText = '1' * 1024;
@@ -154,6 +158,10 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
     // https://github.com/flutter/flutter/issues/64935
     super.dispose();
     gFFI.dialogManager.hideMobileActionsOverlay(store: false);
+    // After super.dispose(), so flipping vr.enabled cannot poke the Obx watching
+    // it. Left alone, pointer capture would outlive this page and the phone would
+    // look like it has a dead mouse everywhere else.
+    vr.abandon();
     gFFI.inputModel.listenToMouse(false);
     gFFI.imageModel.disposeImage();
     gFFI.cursorModel.disposeImages();
@@ -182,6 +190,9 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       trySyncClipboard();
+      // Android drops pointer capture whenever the window loses focus, so a
+      // notification shade pull or the screen locking silently kills the mouse.
+      vr.reacquire();
     }
   }
 
@@ -439,8 +450,77 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
           ? getBottomAppBar()
           : Offstage());
 
+  Future<void> _enterVr() async {
+    setState(() {
+      _showEdit = false;
+      _showGestureHelp = false;
+    });
+    gFFI.dialogManager.hideMobileActionsOverlay(store: false);
+    await vr.enter(gFFI, onExit: () => vr.exit());
+    if (mounted) setState(() {});
+  }
+
+  void _openVrSettings() {
+    setState(() => _showEdit = false);
+    Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => VrSettingsPage(onEnterVr: _enterVr)));
+  }
+
+  /// Stereo presentation. No toolbar, no floating buttons and no gesture
+  /// recognisers: none of them can be seen or reached from inside a headset.
+  ///
+  /// The one touch input wired is a raw pointer down/up, because a Cardboard
+  /// viewer's conductive lever tapping the panel is the only click a bare headset
+  /// has. Unlike a GestureDetector it carries no position, so the click lands at
+  /// the cursor rather than wherever the lever touched, and keeping down and up
+  /// separate is what allows a drag. Mouse events are handled here too: capture is
+  /// meant to take them out of this pipeline and where it does these never fire,
+  /// but where it silently does not this is the only path the mouse has.
+  Widget _buildVrView() {
+    return WillPopScope(
+      // The back gesture leaves VR rather than closing the session — the escape
+      // hatch when the mouse chord is not working.
+      onWillPop: () async {
+        await vr.exit();
+        if (mounted) setState(() {});
+        return false;
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Listener(
+          behavior: HitTestBehavior.opaque,
+          onPointerHover: (e) {
+            if (e.kind == PointerDeviceKind.mouse) {
+              vr.input?.onUncapturedMove(e.delta);
+            }
+          },
+          onPointerMove: (e) {
+            if (e.kind == PointerDeviceKind.mouse) {
+              vr.input?.onUncapturedMove(e.delta);
+              vr.input?.onUncapturedButtons(e.buttons);
+            }
+          },
+          onPointerDown: (e) => e.kind == PointerDeviceKind.mouse
+              ? vr.input?.onUncapturedButtons(e.buttons)
+              : vr.input?.onTouchDown(),
+          onPointerUp: (e) => e.kind == PointerDeviceKind.mouse
+              ? vr.input?.onUncapturedButtons(0)
+              : vr.input?.onTouchUp(),
+          onPointerCancel: (e) => e.kind == PointerDeviceKind.mouse
+              ? vr.input?.onUncapturedButtons(0)
+              : vr.input?.onTouchUp(),
+          child: const VrStereoView(),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    return Obx(() => vr.enabled.value ? _buildVrView() : _buildTouchView(context));
+  }
+
+  Widget _buildTouchView(BuildContext context) {
     final keyboardIsVisible =
         keyboardVisibilityController.isVisible && _showEdit;
     final showActionButton = !_showBar || keyboardIsVisible || _showGestureHelp;
@@ -626,6 +706,21 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
                                   ))
                         ]) +
                   [
+                    InkWell(
+                      onTap: _enterVr,
+                      onLongPress: _openVrSettings,
+                      customBorder: const CircleBorder(),
+                      child: const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: Icon(Icons.vrpano, color: Colors.white),
+                      ),
+                    ),
+                    IconButton(
+                      color: Colors.white,
+                      icon: const Icon(Icons.tune),
+                      tooltip: 'Cardboard VR',
+                      onPressed: _openVrSettings,
+                    ),
                     IconButton(
                       color: Colors.white,
                       icon: Icon(Icons.more_vert),

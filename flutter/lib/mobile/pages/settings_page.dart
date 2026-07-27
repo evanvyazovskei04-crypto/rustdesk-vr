@@ -17,6 +17,7 @@ import '../../common/widgets/login.dart';
 import '../../consts.dart';
 import '../../models/model.dart';
 import '../../models/platform_model.dart';
+import '../vr/vr_settings_page.dart';
 import '../widgets/deploy_dialog.dart';
 import '../widgets/dialog.dart';
 import 'home_page.dart';
@@ -560,6 +561,14 @@ class _SettingsState extends State<SettingsPage> with WidgetsBindingObserver {
                 }
               }));
     }
+    // Reachable with nothing connected: what it tunes belongs to the headset.
+    enhancementsTiles.add(SettingsTile(
+      title: Text('Cardboard VR'),
+      leading: Icon(Icons.vrpano),
+      trailing: Icon(Icons.arrow_forward_ios),
+      onPressed: (context) => Navigator.push(context,
+          MaterialPageRoute(builder: (_) => const VrSettingsPage())),
+    ));
     enhancementsTiles.add(SettingsTile.switchTile(
         initialValue: _enableStartOnBoot,
         title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
