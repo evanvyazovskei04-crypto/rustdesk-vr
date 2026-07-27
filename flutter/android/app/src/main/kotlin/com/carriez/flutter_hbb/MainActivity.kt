@@ -8,6 +8,7 @@ package com.carriez.flutter_hbb
  */
 
 import ffi.FFI
+import com.carriez.flutter_hbb.vr.VrBridge
 
 import android.content.ComponentName
 import android.content.Context
@@ -46,6 +47,7 @@ class MainActivity : FlutterActivity() {
     private val channelTag = "mChannel"
     private val logTag = "mMainActivity"
     private var mainService: MainService? = null
+    private var vrBridge: VrBridge? = null
 
     private var isAudioStart = false
     private val audioRecordHandle = AudioRecordHandle(this, { false }, { isAudioStart })
@@ -62,6 +64,10 @@ class MainActivity : FlutterActivity() {
             channelTag
         )
         initFlutterChannel(flutterMethodChannel!!)
+        // Cardboard VR: head orientation, captured mouse and display control. Its
+        // own channels rather than folded into "mChannel", which is a
+        // request/response control channel; VR needs two high-rate event streams.
+        vrBridge = VrBridge(this, flutterEngine.dartExecutor.binaryMessenger)
         thread {
             try {
                 setCodecInfo()
@@ -106,6 +112,8 @@ class MainActivity : FlutterActivity() {
 
     override fun onDestroy() {
         Log.e(logTag, "onDestroy")
+        vrBridge?.dispose()
+        vrBridge = null
         mainService?.let {
             unbindService(serviceConnection)
         }
