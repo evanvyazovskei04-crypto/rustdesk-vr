@@ -173,6 +173,17 @@ flutter:
       fonts:
         - asset: assets/more.ttf
 
+  # The Cardboard lens pre-warp.
+  #
+  # NOT a dependency change -- no package, no constraint, pubspec.lock untouched.
+  # `shaders:` is an asset-manifest key alongside `assets:` and `fonts:`; it only
+  # tells the build to run impellerc (already in the Flutter cache) over one file,
+  # which turns a GLSL syntax error into a loud build failure instead of a runtime
+  # one. Deliberately not under assets/, which the glob above takes wholesale: a
+  # .frag there would be registered twice under one key.
+  shaders:
+    - shaders/vr_lens.frag
+
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.
 
