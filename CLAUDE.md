@@ -19,6 +19,30 @@ on `main`, and upstream is a plain git remote (`git fetch upstream`) used for
 rebasing onto a newer tag. Nothing here should be shaped around what upstream would
 accept.
 
+**`.github/` is deliberately gutted — do not restore it on a rebase.** Upstream's
+workflows build the Rust core with vcpkg across every desktop platform, which this
+fork cannot do at all; four fire on push, `flutter-tag.yml` fires on any `N.N.N`
+tag (the `1.4.9` fork point matches), and `flutter-nightly.yml` runs on a cron that
+GitHub would have disabled on a real fork but does not on a standalone repository.
+Every signing secret they reference is empty here. `FUNDING.yml`, `ISSUE_TEMPLATE/`
+and `dependabot.yml` went with them: the first put a Sponsor button on this repo
+soliciting donations for RustDesk, the second routed bug reports to RustDesk's
+support channels, and the third targeted a `master` branch that does not exist
+here. Only `.github/patches` survives, because `flutter/build_fdroid.sh` and
+`flutter/build_ios.sh` reference it.
+
+The release-publishing 403 those workflows produced was **not** a defect in them,
+and is worth knowing so it is not misdiagnosed if CI is ever added here: the
+publish step passes no `token:` and no job declares a `permissions:` block, so it
+runs with the repository's default `GITHUB_TOKEN` scope — read-only for a newly
+created repository, read-write for one as old as upstream's. Identical code,
+different repository setting, fixable from Settings → Actions → General or with two
+lines of YAML.
+
+A rebase onto a newer upstream tag will raise delete/modify conflicts on all these
+paths. The resolution is always `git rm`, never "take upstream's version" — that
+silently reinstates the sponsor button.
+
 Everything this fork adds is **Dart and Kotlin**. Nothing under `src/` (the Rust
 core), `flutter/lib/desktop/` or `flutter/lib/web/` is touched — and the reason is
 not merge cleanliness but that **the Rust core cannot be rebuilt here at all.**
