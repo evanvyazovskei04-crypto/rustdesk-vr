@@ -1,0 +1,35 @@
+name: Build APK
+on: workflow_dispatch
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.5'
+          channel: stable
+      - uses: dtolnay/rust-toolchain@stable
+      - name: System tools
+        run: sudo apt-get update && sudo apt-get install -y libclang-dev llvm-dev clang protobuf-compiler
+      - name: Bridge codegen tools
+        run: |
+          cargo install cbindgen --locked
+          cargo install flutter_rust_bridge_codegen --version 1.80.1 --locked
+      - run: cargo fetch
+      - run: flutter config --jdk-dir="$JAVA_HOME"
+      - run: cd flutter && flutter pub get
+      - run: flutter_rust_bridge_codegen --rust-input ./src/flutter_ffi.rs --dart-output ./flutter/lib/generated_bridge.dart
+      - run: ./scripts/fetch_prebuilt_native_libs.sh
+      - run: cd flutter && flutter build apk --debug --target-platform android-arm64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rustdesk-vr-apk
+          path: flutter/build/app/outputs/flutter-apk/app-debug.apk
