@@ -15,6 +15,10 @@ import 'vr_view.dart';
 /// forwarding every sample would flood the session for no visible benefit.
 const _flushInterval = Duration(milliseconds: 8);
 
+/// After we command the host cursor, ignore host position reports for this long:
+/// they may be an echo of our own move rather than a real mouse on the host.
+const _echoWindow = Duration(milliseconds: 350);
+
 /// The single owner of where the cursor is, and the only thing that talks to
 /// [InputModel]. That is what lets a click land where the painter drew it.
 ///
@@ -52,6 +56,7 @@ class VrCursor {
   Offset? _remote;
   double _pendingDx = 0, _pendingDy = 0;
   bool? _hadPermission;
+  DateTime _lastCommand = DateTime.fromMillisecondsSinceEpoch(0);
   bool _warnedNoRect = false;
 
   /// Whether the last tick panned by pushing. Edge push has to keep going while
@@ -65,15 +70,52 @@ class VrCursor {
     position.value = null;
     _pendingDx = _pendingDy = 0;
     _edging = false;
+    // Follow a mouse that is plugged into the HOST. Without this the cursor is
+    // only ever placed by phone-side input, so with no mouse on the phone it was
+    // never drawn at all.
+    ffi.cursorModel.removeListener(_onHostCursor);
+    ffi.cursorModel.addListener(_onHostCursor);
     _timer ??= Timer.periodic(_flushInterval, (_) => flush());
   }
 
   void stop() {
+    ffi.cursorModel.removeListener(_onHostCursor);
     _timer?.cancel();
     _timer = null;
     _pendingDx = _pendingDy = 0;
     _edging = false;
     position.value = null;
+  }
+
+  /// Publish [at] (absolute, in [rect] space) as the fraction the painter reads.
+  void _publish(Rect rect, Offset at) {
+    position.value = Offset(
+      rect.width == 0 ? 0 : (at.dx - rect.left) / rect.width,
+      rect.height == 0 ? 0 : (at.dy - rect.top) / rect.height,
+    );
+  }
+
+  /// The host reported a cursor position -- i.e. a mouse attached to the remote
+  /// machine moved it. Adopt it so the cursor drawn here follows the real one,
+  /// and so the next phone-side movement continues from there instead of
+  /// jumping back to a stale position.
+  ///
+  /// Does not send anything to the host, so it cannot loop. Skipped while the
+  /// head drives the cursor (the head owns the pointer in that mode) and inside
+  /// [_echoWindow] after our own command.
+  void _onHostCursor() {
+    final rect = ffi.ffiModel.rect;
+    if (rect == null) return;
+    if (settings.mode.headDrivesCursor) return;
+    final known = ffi.cursorModel.offset;
+    if (!rect.contains(known)) return;
+    final last = _remote;
+    if (last != null) {
+      if ((known - last).distance < 2) return;
+      if (DateTime.now().difference(_lastCommand) < _echoWindow) return;
+    }
+    _remote = known;
+    _publish(rect, known);
   }
 
   /// Relative motion from a mouse. Ignored while the head drives the cursor: the
@@ -120,6 +162,15 @@ class VrCursor {
     _warnedNoRect = false;
 
     final head = settings.mode.headDrivesCursor;
+
+    // Show the cursor from the start in mouse modes, before any phone-side
+    // movement: at the host's last reported position if known, else the centre.
+    if (!head && _remote == null) {
+      final known = ffi.cursorModel.offset;
+      _remote = rect.contains(known) ? known : rect.center;
+      _publish(rect, _remote!);
+    }
+
     final nudged = _pendingDx != 0 || _pendingDy != 0;
     if (!head && !nudged && !_edging) return;
 
@@ -181,12 +232,9 @@ class VrCursor {
     // moves.
     _remote = committed;
     if (!head) _edgePush(rect, committed);
+    _lastCommand = DateTime.now();
     ffi.inputModel.moveMouse(_remote!.dx, _remote!.dy);
-    final out = _remote!;
-    position.value = Offset(
-      rect.width == 0 ? 0 : (out.dx - rect.left) / rect.width,
-      rect.height == 0 ? 0 : (out.dy - rect.top) / rect.height,
-    );
+    _publish(rect, _remote!);
   }
 
   /// Pan the view while the mouse cursor is held against the edge of what is
